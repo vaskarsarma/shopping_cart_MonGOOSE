@@ -1,7 +1,7 @@
-# Shopping_Cart_MongoDB
+# shopping_cart_MonGOOSE
 
 - Shopping cart application using 
 
 NodeJS >> for backe end logic
 EJS >> as view engine
-Mongo DB >> to store data
+Mongo DB >> mongoose >> to store data
