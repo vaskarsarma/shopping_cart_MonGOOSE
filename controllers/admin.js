@@ -18,6 +18,7 @@ exports.postAddProduct = (req, res, next) => {
 		description: description,
 		price: price,
 		imageUrl: imageUrl,
+		userId: req.user,
 	});
 	product
 		.save()
@@ -38,7 +39,7 @@ exports.getEditProduct = (req, res, next) => {
 
 	console.log(prodID);
 
-	Product.findByID(prodID)
+	Product.findById(prodID)
 		.then(product => {
 			if (!product) {
 				res.redirect('/');
@@ -63,33 +64,40 @@ exports.postEditProduct = (req, res, next) => {
 	const price = req.body.price;
 	const description = req.body.description;
 
-	const product = new Product(
-		title,
-		imageUrl,
-		description,
-		price,
-		prodID,
-		req.user._id,
-	);
-	product
-		.save()
-		.then(result => {
-			console.log(result);
-			res.redirect('/admin/products');
-		})
-		.catch(err => {
-			console.log(err);
-			throw err;
-		});
+	Product.findById(prodID).then(product => {
+		product.title = title;
+		product.imageUrl = imageUrl;
+		product.price = price;
+		product.description = description;
+
+		return product
+			.save()
+			.then(result => {
+				console.log(result);
+				res.redirect('/admin/products');
+			})
+			.catch(err => {
+				console.log(err);
+				throw err;
+			});
+	});
 };
 
 exports.postDeleteProduct = (req, res, next) => {
 	const prodID = req.body.productid;
-	Product.deleteByID(prodID)
+	Product.findByIdAndRemove(prodID)
 		.then(result => {
-			console.log('Data deleted');
-			console.log(result);
-			res.redirect('/admin/products');
+			req.user
+				.deleteProductFromCart(prodID)
+				.then(prod => {
+					console.log('Data deleted');
+					console.log(prod);
+					res.redirect('/admin/products');
+				})
+				.catch(err => {
+					console.log(err);
+					throw err;
+				});
 		})
 		.catch(err => {
 			console.log(err);
@@ -98,8 +106,11 @@ exports.postDeleteProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-	Product.fetchAll()
+	Product.find()
+		//.select('title price')
+		//.populate('userId', 'name email')
 		.then(products => {
+			console.log(products);
 			res.render('admin/products', {
 				prods: products,
 				pageTitle: 'Admin Products',
